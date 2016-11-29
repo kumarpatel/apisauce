@@ -8,6 +8,70 @@ var axios = _interopDefault(require('axios'));
 var R = _interopDefault(require('ramda'));
 var RS = _interopDefault(require('ramdasauce'));
 
+var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) {
+  return typeof obj;
+} : function (obj) {
+  return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj;
+};
+
+var jsx = function () {
+  var REACT_ELEMENT_TYPE = typeof Symbol === "function" && Symbol.for && Symbol.for("react.element") || 0xeac7;
+  return function createRawReactElement(type, props, key, children) {
+    var defaultProps = type && type.defaultProps;
+    var childrenLength = arguments.length - 3;
+
+    if (!props && childrenLength !== 0) {
+      props = {};
+    }
+
+    if (props && defaultProps) {
+      for (var propName in defaultProps) {
+        if (props[propName] === void 0) {
+          props[propName] = defaultProps[propName];
+        }
+      }
+    } else if (!props) {
+      props = defaultProps || {};
+    }
+
+    if (childrenLength === 1) {
+      props.children = children;
+    } else if (childrenLength > 1) {
+      var childArray = Array(childrenLength);
+
+      for (var i = 0; i < childrenLength; i++) {
+        childArray[i] = arguments[i + 3];
+      }
+
+      props.children = childArray;
+    }
+
+    return {
+      $$typeof: REACT_ELEMENT_TYPE,
+      type: type,
+      key: key === undefined ? null : '' + key,
+      ref: null,
+      props: props,
+      _owner: null
+    };
+  };
+}();
+
+var asyncIterator = function (iterable) {
+  if (typeof Symbol === "function") {
+    if (Symbol.asyncIterator) {
+      var method = iterable[Symbol.asyncIterator];
+      if (method != null) return method.call(iterable);
+    }
+
+    if (Symbol.iterator) {
+      return iterable[Symbol.iterator]();
+    }
+  }
+
+  throw new TypeError("Object is not async iterable");
+};
+
 var asyncGenerator = function () {
   function AwaitValue(value) {
     this.value = value;
@@ -121,19 +185,151 @@ var asyncGenerator = function () {
   };
 }();
 
+var asyncGeneratorDelegate = function (inner, awaitWrap) {
+  var iter = {},
+      waiting = false;
 
+  function pump(key, value) {
+    waiting = true;
+    value = new Promise(function (resolve) {
+      resolve(inner[key](value));
+    });
+    return {
+      done: false,
+      value: awaitWrap(value)
+    };
+  }
 
+  
 
+  if (typeof Symbol === "function" && Symbol.iterator) {
+    iter[Symbol.iterator] = function () {
+      return this;
+    };
+  }
 
+  iter.next = function (value) {
+    if (waiting) {
+      waiting = false;
+      return value;
+    }
 
+    return pump("next", value);
+  };
 
+  if (typeof inner.throw === "function") {
+    iter.throw = function (value) {
+      if (waiting) {
+        waiting = false;
+        throw value;
+      }
 
+      return pump("throw", value);
+    };
+  }
 
+  if (typeof inner.return === "function") {
+    iter.return = function (value) {
+      return pump("return", value);
+    };
+  }
 
+  return iter;
+};
 
+var asyncToGenerator = function (fn) {
+  return function () {
+    var gen = fn.apply(this, arguments);
+    return new Promise(function (resolve, reject) {
+      function step(key, arg) {
+        try {
+          var info = gen[key](arg);
+          var value = info.value;
+        } catch (error) {
+          reject(error);
+          return;
+        }
 
+        if (info.done) {
+          resolve(value);
+        } else {
+          return Promise.resolve(value).then(function (value) {
+            step("next", value);
+          }, function (err) {
+            step("throw", err);
+          });
+        }
+      }
 
+      return step("next");
+    });
+  };
+};
 
+var classCallCheck = function (instance, Constructor) {
+  if (!(instance instanceof Constructor)) {
+    throw new TypeError("Cannot call a class as a function");
+  }
+};
+
+var createClass = function () {
+  function defineProperties(target, props) {
+    for (var i = 0; i < props.length; i++) {
+      var descriptor = props[i];
+      descriptor.enumerable = descriptor.enumerable || false;
+      descriptor.configurable = true;
+      if ("value" in descriptor) descriptor.writable = true;
+      Object.defineProperty(target, descriptor.key, descriptor);
+    }
+  }
+
+  return function (Constructor, protoProps, staticProps) {
+    if (protoProps) defineProperties(Constructor.prototype, protoProps);
+    if (staticProps) defineProperties(Constructor, staticProps);
+    return Constructor;
+  };
+}();
+
+var defineEnumerableProperties = function (obj, descs) {
+  for (var key in descs) {
+    var desc = descs[key];
+    desc.configurable = desc.enumerable = true;
+    if ("value" in desc) desc.writable = true;
+    Object.defineProperty(obj, key, desc);
+  }
+
+  return obj;
+};
+
+var defaults = function (obj, defaults) {
+  var keys = Object.getOwnPropertyNames(defaults);
+
+  for (var i = 0; i < keys.length; i++) {
+    var key = keys[i];
+    var value = Object.getOwnPropertyDescriptor(defaults, key);
+
+    if (value && value.configurable && obj[key] === undefined) {
+      Object.defineProperty(obj, key, value);
+    }
+  }
+
+  return obj;
+};
+
+var defineProperty = function (obj, key, value) {
+  if (key in obj) {
+    Object.defineProperty(obj, key, {
+      value: value,
+      enumerable: true,
+      configurable: true,
+      writable: true
+    });
+  } else {
+    obj[key] = value;
+  }
+
+  return obj;
+};
 
 var _extends = Object.assign || function (target) {
   for (var i = 1; i < arguments.length; i++) {
@@ -174,21 +370,84 @@ var get = function get(object, property, receiver) {
   }
 };
 
+var inherits = function (subClass, superClass) {
+  if (typeof superClass !== "function" && superClass !== null) {
+    throw new TypeError("Super expression must either be null or a function, not " + typeof superClass);
+  }
 
+  subClass.prototype = Object.create(superClass && superClass.prototype, {
+    constructor: {
+      value: subClass,
+      enumerable: false,
+      writable: true,
+      configurable: true
+    }
+  });
+  if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass;
+};
 
+var _instanceof = function (left, right) {
+  if (right != null && typeof Symbol !== "undefined" && right[Symbol.hasInstance]) {
+    return right[Symbol.hasInstance](left);
+  } else {
+    return left instanceof right;
+  }
+};
 
+var interopRequireDefault = function (obj) {
+  return obj && obj.__esModule ? obj : {
+    default: obj
+  };
+};
 
+var interopRequireWildcard = function (obj) {
+  if (obj && obj.__esModule) {
+    return obj;
+  } else {
+    var newObj = {};
 
+    if (obj != null) {
+      for (var key in obj) {
+        if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key];
+      }
+    }
 
+    newObj.default = obj;
+    return newObj;
+  }
+};
 
+var newArrowCheck = function (innerThis, boundThis) {
+  if (innerThis !== boundThis) {
+    throw new TypeError("Cannot instantiate an arrow function");
+  }
+};
 
+var objectDestructuringEmpty = function (obj) {
+  if (obj == null) throw new TypeError("Cannot destructure undefined");
+};
 
+var objectWithoutProperties = function (obj, keys) {
+  var target = {};
 
+  for (var i in obj) {
+    if (keys.indexOf(i) >= 0) continue;
+    if (!Object.prototype.hasOwnProperty.call(obj, i)) continue;
+    target[i] = obj[i];
+  }
 
+  return target;
+};
 
+var possibleConstructorReturn = function (self, call) {
+  if (!self) {
+    throw new ReferenceError("this hasn't been initialised - super() hasn't been called");
+  }
 
+  return call && (typeof call === "object" || typeof call === "function") ? call : self;
+};
 
-
+var selfGlobal = typeof global === "undefined" ? self : global;
 
 var set = function set(object, property, value, receiver) {
   var desc = Object.getOwnPropertyDescriptor(object, property);
@@ -211,6 +470,137 @@ var set = function set(object, property, value, receiver) {
 
   return value;
 };
+
+var slicedToArray = function () {
+  function sliceIterator(arr, i) {
+    var _arr = [];
+    var _n = true;
+    var _d = false;
+    var _e = undefined;
+
+    try {
+      for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) {
+        _arr.push(_s.value);
+
+        if (i && _arr.length === i) break;
+      }
+    } catch (err) {
+      _d = true;
+      _e = err;
+    } finally {
+      try {
+        if (!_n && _i["return"]) _i["return"]();
+      } finally {
+        if (_d) throw _e;
+      }
+    }
+
+    return _arr;
+  }
+
+  return function (arr, i) {
+    if (Array.isArray(arr)) {
+      return arr;
+    } else if (Symbol.iterator in Object(arr)) {
+      return sliceIterator(arr, i);
+    } else {
+      throw new TypeError("Invalid attempt to destructure non-iterable instance");
+    }
+  };
+}();
+
+var slicedToArrayLoose = function (arr, i) {
+  if (Array.isArray(arr)) {
+    return arr;
+  } else if (Symbol.iterator in Object(arr)) {
+    var _arr = [];
+
+    for (var _iterator = arr[Symbol.iterator](), _step; !(_step = _iterator.next()).done;) {
+      _arr.push(_step.value);
+
+      if (i && _arr.length === i) break;
+    }
+
+    return _arr;
+  } else {
+    throw new TypeError("Invalid attempt to destructure non-iterable instance");
+  }
+};
+
+var taggedTemplateLiteral = function (strings, raw) {
+  return Object.freeze(Object.defineProperties(strings, {
+    raw: {
+      value: Object.freeze(raw)
+    }
+  }));
+};
+
+var taggedTemplateLiteralLoose = function (strings, raw) {
+  strings.raw = raw;
+  return strings;
+};
+
+var temporalRef = function (val, name, undef) {
+  if (val === undef) {
+    throw new ReferenceError(name + " is not defined - temporal dead zone");
+  } else {
+    return val;
+  }
+};
+
+var temporalUndefined = {};
+
+var toArray = function (arr) {
+  return Array.isArray(arr) ? arr : Array.from(arr);
+};
+
+var toConsumableArray = function (arr) {
+  if (Array.isArray(arr)) {
+    for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) arr2[i] = arr[i];
+
+    return arr2;
+  } else {
+    return Array.from(arr);
+  }
+};
+
+
+
+var babelHelpers$1 = Object.freeze({
+	jsx: jsx,
+	asyncIterator: asyncIterator,
+	asyncGenerator: asyncGenerator,
+	asyncGeneratorDelegate: asyncGeneratorDelegate,
+	asyncToGenerator: asyncToGenerator,
+	classCallCheck: classCallCheck,
+	createClass: createClass,
+	defineEnumerableProperties: defineEnumerableProperties,
+	defaults: defaults,
+	defineProperty: defineProperty,
+	get: get,
+	inherits: inherits,
+	interopRequireDefault: interopRequireDefault,
+	interopRequireWildcard: interopRequireWildcard,
+	newArrowCheck: newArrowCheck,
+	objectDestructuringEmpty: objectDestructuringEmpty,
+	objectWithoutProperties: objectWithoutProperties,
+	possibleConstructorReturn: possibleConstructorReturn,
+	selfGlobal: selfGlobal,
+	set: set,
+	slicedToArray: slicedToArray,
+	slicedToArrayLoose: slicedToArrayLoose,
+	taggedTemplateLiteral: taggedTemplateLiteral,
+	taggedTemplateLiteralLoose: taggedTemplateLiteralLoose,
+	temporalRef: temporalRef,
+	temporalUndefined: temporalUndefined,
+	toArray: toArray,
+	toConsumableArray: toConsumableArray,
+	typeof: _typeof,
+	extends: _extends,
+	instanceof: _instanceof
+});
+
+var _this = undefined;
 
 // check for an invalid config
 var isInvalidConfig = R.anyPass([R.isNil, R.isEmpty, R.complement(R.has('baseURL')), R.complement(R.propIs(String, 'baseURL')), R.propSatisfies(R.isEmpty, 'baseURL')]);
@@ -307,32 +697,78 @@ var create = function create(config) {
   /**
     Make the request with this config!
    */
-  var doRequest = function doRequest(axiosRequestConfig) {
-    var startedAt = RS.toNumber(new Date());
+  var doRequest = function () {
+    var _ref = asyncToGenerator(regeneratorRuntime.mark(function _callee2(axiosRequestConfig) {
+      var startedAt, chain;
+      return regeneratorRuntime.wrap(function _callee2$(_context2) {
+        while (1) {
+          switch (_context2.prev = _context2.next) {
+            case 0:
+              startedAt = RS.toNumber(new Date());
 
-    axiosRequestConfig.headers = _extends({}, headers, axiosRequestConfig.headers);
-    // add the request transforms
-    if (requestTransforms.length > 0) {
-      (function () {
-        // create an object to feed through the request transforms
-        var request = R.pick(['url', 'method', 'data', 'headers', 'params'], axiosRequestConfig);
 
-        // go go go!
-        R.forEach(function (transform) {
-          return transform(request);
-        }, requestTransforms);
+              axiosRequestConfig.headers = _extends({}, headers, axiosRequestConfig.headers);
+              // add the request transforms
 
-        // overwrite our axios request with whatever our object looks like now
-        axiosRequestConfig = R.merge(axiosRequestConfig, request);
-      })();
-    }
+              if (!(requestTransforms.length > 0)) {
+                _context2.next = 4;
+                break;
+              }
 
-    // first convert the axios response, then execute our callback
-    var chain = R.pipe(R.partial(convertResponse, [startedAt]), runMonitors);
+              return _context2.delegateYield(regeneratorRuntime.mark(function _callee() {
+                var request;
+                return regeneratorRuntime.wrap(function _callee$(_context) {
+                  while (1) {
+                    switch (_context.prev = _context.next) {
+                      case 0:
+                        // create an object to feed through the request transforms
+                        request = R.pick(['url', 'method', 'data', 'headers', 'params'], axiosRequestConfig);
 
-    // Make the request and execute the identical pipeline for both promise paths.
-    return instance.request(axiosRequestConfig).then(chain).catch(chain);
-  };
+                        // right-to-left merge the request transforms with the axios request
+
+                        _context.t0 = R;
+                        _context.t1 = [axiosRequestConfig, request];
+                        _context.t2 = babelHelpers$1;
+                        _context.next = 6;
+                        return Promise.all(requestTransforms.map(function (p) {
+                          return p(request);
+                        }));
+
+                      case 6:
+                        _context.t3 = _context.sent.reverse();
+                        _context.t4 = _context.t2.toConsumableArray.call(_context.t2, _context.t3);
+                        _context.t5 = _context.t1.concat.call(_context.t1, _context.t4);
+                        axiosRequestConfig = _context.t0.mergeAll.call(_context.t0, _context.t5);
+
+                      case 10:
+                      case 'end':
+                        return _context.stop();
+                    }
+                  }
+                }, _callee, _this);
+              })(), 't0', 4);
+
+            case 4:
+
+              // first convert the axios response, then execute our callback
+              chain = R.pipe(R.partial(convertResponse, [startedAt]), runMonitors);
+
+              // Make the request and execute the identical pipeline for both promise paths.
+
+              return _context2.abrupt('return', instance.request(axiosRequestConfig).then(chain).catch(chain));
+
+            case 6:
+            case 'end':
+              return _context2.stop();
+          }
+        }
+      }, _callee2, _this);
+    }));
+
+    return function doRequest(_x5) {
+      return _ref.apply(this, arguments);
+    };
+  }();
 
   /**
     Fires after we convert from axios' response into our response.  Exceptions
